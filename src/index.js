@@ -48,19 +48,19 @@ export default Postgres
 
 function Postgres(a, b) {
   const options = parseOptions(a, b)
-      , subscribe = options.no_subscribe || Subscribe(Postgres, { ...options })
+    , subscribe = options.no_subscribe || Subscribe(Postgres, { ...options })
 
   let ending = false
 
   const queries = Queue()
-      , connecting = Queue()
-      , reserved = Queue()
-      , closed = Queue()
-      , ended = Queue()
-      , open = Queue()
-      , busy = Queue()
-      , full = Queue()
-      , queues = { connecting, reserved, closed, ended, open, busy, full }
+    , connecting = Queue()
+    , reserved = Queue()
+    , closed = Queue()
+    , ended = Queue()
+    , open = Queue()
+    , busy = Queue()
+    , full = Queue()
+    , queues = { connecting, reserved, closed, ended, open, busy, full }
 
   const connections = [...Array(options.max)].map(() => Connection(options, queues, { onopen, onend, onclose }))
 
@@ -98,7 +98,8 @@ function Postgres(a, b) {
       notify,
       array,
       json,
-      file
+      file,
+      addType
     })
 
     return sql
@@ -165,7 +166,7 @@ function Postgres(a, b) {
     }))
 
     const channels = listen.channels || (listen.channels = {})
-        , exists = name in channels
+      , exists = name in channels
 
     if (exists) {
       channels[name].listeners.push(listener)
@@ -174,9 +175,10 @@ function Postgres(a, b) {
       return { state: result.state, unlisten }
     }
 
-    channels[name] = { result: sql`listen ${
-      sql.unsafe('"' + name.replace(/"/g, '""') + '"')
-    }`, listeners: [listener] }
+    channels[name] = {
+      result: sql`listen ${sql.unsafe('"' + name.replace(/"/g, '""') + '"')
+        }`, listeners: [listener]
+    }
     const result = await channels[name].result
     listener.onlisten && listener.onlisten()
     return { state: result.state, unlisten }
@@ -190,14 +192,13 @@ function Postgres(a, b) {
         return
 
       delete channels[name]
-      return sql`unlisten ${
-        sql.unsafe('"' + name.replace(/"/g, '""') + '"')
-      }`
+      return sql`unlisten ${sql.unsafe('"' + name.replace(/"/g, '""') + '"')
+        }`
     }
   }
 
   async function notify(channel, payload) {
-    return await sql`select pg_notify(${ channel }, ${ '' + payload })`
+    return await sql`select pg_notify(${channel}, ${'' + payload})`
   }
 
   async function reserve() {
@@ -254,7 +255,7 @@ function Postgres(a, b) {
       let uncaughtError
         , result
 
-      name && await sql`savepoint ${ sql(name) }`
+      name && await sql`savepoint ${sql(name)}`
       try {
         result = await new Promise((resolve, reject) => {
           const x = fn(sql)
@@ -265,7 +266,7 @@ function Postgres(a, b) {
           throw uncaughtError
       } catch (e) {
         await (name
-          ? sql`rollback to ${ sql(name) }`
+          ? sql`rollback to ${sql(name)}`
           : sql`rollback`
         )
         throw e instanceof PostgresError && e.code === '25P02' && uncaughtError || e
@@ -273,7 +274,7 @@ function Postgres(a, b) {
 
       if (!name) {
         prepare
-          ? await sql`prepare transaction '${ sql.unsafe(prepare) }'`
+          ? await sql`prepare transaction '${sql.unsafe(prepare)}'`
           : await sql`commit`
       }
 
@@ -431,12 +432,12 @@ function parseOptions(a, b) {
     return a
 
   const env = process.env // eslint-disable-line
-      , o = (!a || typeof a === 'string' ? b : a) || {}
-      , { url, multihost } = parseUrl(a)
-      , query = [...url.searchParams].reduce((a, [b, c]) => (a[b] = c, a), {})
-      , host = o.hostname || o.host || multihost || url.hostname || env.PGHOST || 'localhost'
-      , port = o.port || url.port || env.PGPORT || 5432
-      , user = o.user || o.username || url.username || env.PGUSERNAME || env.PGUSER || osUsername()
+    , o = (!a || typeof a === 'string' ? b : a) || {}
+    , { url, multihost } = parseUrl(a)
+    , query = [...url.searchParams].reduce((a, [b, c]) => (a[b] = c, a), {})
+    , host = o.hostname || o.host || multihost || url.hostname || env.PGHOST || 'localhost'
+    , port = o.port || url.port || env.PGPORT || 5432
+    , user = o.user || o.username || url.username || env.PGUSERNAME || env.PGUSER || osUsername()
 
   o.no_prepare && (o.prepare = false)
   query.sslmode && (query.ssl = query.sslmode, delete query.sslmode)
@@ -445,28 +446,28 @@ function parseOptions(a, b) {
 
   const ints = ['idle_timeout', 'connect_timeout', 'max_lifetime', 'max_pipeline', 'backoff', 'keep_alive']
   const defaults = {
-    max             : 10,
-    ssl             : false,
-    idle_timeout    : null,
-    connect_timeout : 30,
-    max_lifetime    : max_lifetime,
-    max_pipeline    : 100,
-    backoff         : backoff,
-    keep_alive      : 60,
-    prepare         : true,
-    debug           : false,
-    fetch_types     : true,
-    publications    : 'alltables',
+    max: 10,
+    ssl: false,
+    idle_timeout: null,
+    connect_timeout: 30,
+    max_lifetime: max_lifetime,
+    max_pipeline: 100,
+    backoff: backoff,
+    keep_alive: 60,
+    prepare: true,
+    debug: false,
+    fetch_types: true,
+    publications: 'alltables',
     target_session_attrs: null
   }
 
   return {
-    host            : Array.isArray(host) ? host : host.split(',').map(x => x.split(':')[0]),
-    port            : Array.isArray(port) ? port : host.split(',').map(x => parseInt(x.split(':')[1] || port)),
-    path            : o.path || host.indexOf('/') > -1 && host + '/.s.PGSQL.' + port,
-    database        : o.database || o.db || (url.pathname || '').slice(1) || env.PGDATABASE || user,
-    user            : user,
-    pass            : o.pass || o.password || url.password || env.PGPASSWORD || '',
+    host: Array.isArray(host) ? host : host.split(',').map(x => x.split(':')[0]),
+    port: Array.isArray(port) ? port : host.split(',').map(x => parseInt(x.split(':')[1] || port)),
+    path: o.path || host.indexOf('/') > -1 && host + '/.s.PGSQL.' + port,
+    database: o.database || o.db || (url.pathname || '').slice(1) || env.PGDATABASE || user,
+    user: user,
+    pass: o.pass || o.password || url.password || env.PGPASSWORD || '',
     ...Object.entries(defaults).reduce(
       (acc, [k, d]) => {
         const value = k in o ? o[k] : k in query
@@ -479,21 +480,21 @@ function parseOptions(a, b) {
       },
       {}
     ),
-    connection      : {
+    connection: {
       application_name: 'postgres.js',
       ...o.connection,
       ...Object.entries(query).reduce((acc, [k, v]) => (k in defaults || (acc[k] = v), acc), {})
     },
-    types           : o.types || {},
+    types: o.types || {},
     target_session_attrs: tsa(o, url, env),
-    onnotice        : o.onnotice,
-    onnotify        : o.onnotify,
-    onclose         : o.onclose,
-    onparameter     : o.onparameter,
-    socket          : o.socket,
-    transform       : parseTransform(o.transform || { undefined: undefined }),
-    parameters      : {},
-    shared          : { retries: 0, typeArrayMap: {} },
+    onnotice: o.onnotice,
+    onnotify: o.onnotify,
+    onclose: o.onclose,
+    onparameter: o.onparameter,
+    socket: o.socket,
+    transform: parseTransform(o.transform || { undefined: undefined }),
+    parameters: {},
+    shared: { retries: 0, typeArrayMap: {} },
     ...mergeUserTypes(o.types)
   }
 }
@@ -562,4 +563,13 @@ function osUsername() {
   } catch (_) {
     return process.env.USERNAME || process.env.USER || process.env.LOGNAME  // eslint-disable-line
   }
+}
+
+async function addType(name, { serializer, parser }) {
+  const [{ oid }] = await this`
+    select oid from pg_type where typname = ${name} 
+  `;
+  this.typed[name] = (x) => this.typed(x, oid);
+  this.options.serializers[oid] = serializer;
+  this.options.parsers[oid] = parser;
 }
